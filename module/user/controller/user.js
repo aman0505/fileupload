@@ -5,6 +5,7 @@ var Minizip = require('minizip-asm.js');
 var fs = require("fs");
 const JSZip = require('jszip');
 const generate = require('nanoid/generate')
+
 const firebaseConfig = {
     apiKey: "AIzaSyBF-8wuP6pXLMNFlbbK6HYexQX2tkvnnTM",
     authDomain: "filzupload.firebaseapp.com",
