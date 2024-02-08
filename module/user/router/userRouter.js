@@ -6,5 +6,7 @@ const upload = multer({
 });
 
 router.post("/uploadWithOutLogin",upload.any(),user.FileUploadWithoutLogin)
+router.get("/uploadfile",user.userupload)
+
 
 module.exports = router;

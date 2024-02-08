@@ -136,6 +136,15 @@ const FileUploadWithoutLogin = async (req, res) => {
     }
 
 }
+
+const userupload=async(req,res)=>{
+    res.status(200).send({
+        msg:"server loaded"
+    })
+
+}
+
 module.exports = {
-    FileUploadWithoutLogin
+    FileUploadWithoutLogin,
+    userupload
 }
