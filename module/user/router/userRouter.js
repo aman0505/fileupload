@@ -4,7 +4,7 @@ const multer = require('multer');
 const userAuth=require("../milldeware/userAuth")
 const upload = multer({
     storage: multer.memoryStorage()
-});
+}); 
 
 router.post("/uploadWithOutLogin",upload.any(),user.FileUploadWithoutLogin)
 router.post("/userSignup",user.UserSignup)

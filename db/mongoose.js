@@ -4,7 +4,7 @@ const dotenv = require('dotenv').config();
 
 const connectDn = async () => {
     try {
-        const conn = await mongoose.connect("mongodb://127.0.0.1/FileUploads")
+        const conn = await mongoose.connect(process.env.MongoUrl)
         console.log(`MongoDB Connected: ${conn.connection.host}`)
         
     } catch (error) {
