@@ -1,12 +1,11 @@
-
 const express = require("express")
 const bodyParser = require('body-parser');
 const app = express()
-require('dotenv').config()
+
 const port =process.env.PORT||5000
 const cors = require('cors');
-
-
+require("./db/mongoose")
+ 
 // spawn = require('child_process').spawn;
 
 

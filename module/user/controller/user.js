@@ -1,23 +1,42 @@
 const { initializeApp } = require("firebase/app");
-const { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL } = require("firebase/storage")
+const { getStorage, ref, uploadBytesResumable, getDownloadURL } = require("firebase/storage")
 const { signInWithEmailAndPassword, getAuth } = require("firebase/auth")
 var Minizip = require('minizip-asm.js');
-var fs = require("fs");
-const JSZip = require('jszip');
 const generate = require('nanoid/generate')
-
+const collection = require("../models/fileupload");
+const userCollection = require("../models/userSignup");
+const geterateAuthUserToken = require("../../../helpers/user/token");
+const bcrypt = require("bcryptjs");
+// const collection = require("../models/fileupload");
+const dotenv=require("dotenv").config()
 const firebaseConfig = {
-    apiKey: "AIzaSyBF-8wuP6pXLMNFlbbK6HYexQX2tkvnnTM",
-    authDomain: "filzupload.firebaseapp.com",
-    projectId: "filzupload",
-    storageBucket: "filzupload.appspot.com",
-    messagingSenderId: "1046579677919",
-    appId: "1:1046579677919:web:e899ea2fa75d814aa3776a"
+    apiKey: process.env.apiKey,
+    authDomain: process.env.authDomain,
+    projectId: process.env.projectId,
+    storageBucket: process.env.storageBucket,
+    messagingSenderId: process.env.messagingSenderId,
+    appId: process.env.appId
 };
 const app1 = initializeApp(firebaseConfig);
 
+const GenerateUniquekey = () => {
+    const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*';
+    return generate(alphabet, 6)
+}
+
+
+const ValiDateFileMb = (fileLength, filesarray) => {
+    TotalFileSizeBytes = 0
+    for (let i = 0; i < fileLength; i++) {
+        TotalFileSizeBytes += filesarray[i].size
+    }
+    fileInKb = TotalFileSizeBytes / 1000
+    return fileInKb / 1000
+
+}
+
 const FileUploadWithoutLogin = async (req, res) => {
-  
+
 
     try {
 
@@ -29,25 +48,24 @@ const FileUploadWithoutLogin = async (req, res) => {
 
         // 340153 bytes 
         // generating unique id 
-        const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*';
-        model = generate(alphabet, 6)
+
+
         // ================================================
         // Files Size Restriction
-        TotalFileSizeBytes = 0
-        for (let i = 0; i < req.files.length; i++) {
-            TotalFileSizeBytes += req.files[i].size
-        }
-        fileInKb = TotalFileSizeBytes / 1000
-        fileInMb = fileInKb / 1000
-        if (fileInMb > 5) {
+
+
+
+        const FileSIze = 4
+        const fileLength = req.files.length
+        if (ValiDateFileMb(fileLength, req.files) > FileSIze) {
             res.status(400).send({
-                error: 'File Must Be Less Than 5MB'
+                error: `File Must Be Less Than ${FileSIze}MB`
             })
             return false
         }
         // ============================================
-        console.log(TotalFileSizeBytes + "total bytes")
-        console.log(fileInMb.toFixed(3) + "MB")
+        // console.log(TotalFileSizeBytes + "total bytes")
+        // console.log(fileInMb.toFixed(3) + "MB")
         if (req.body.FileName == null || req.body.FileName == '') {
 
             res.status(400).send("Please Enter File Name")
@@ -70,13 +88,13 @@ const FileUploadWithoutLogin = async (req, res) => {
         const storage = getStorage();
         const auth = getAuth(app1);
         // authentation 
-        await signInWithEmailAndPassword(auth, "quickearth4@gmail.com", "9805999374")
+        await signInWithEmailAndPassword(auth, process.env.firebaseEmail, process.env.firebasePassword)
         const storageRef = ref(storage, req.body.FileName + ".zip")
         var metadata = {
             customMetadata: {
-                'uniqueId': model,
+                'uniqueId': GenerateUniquekey(),
                 "date": new Date(),
-                "size": fileInMb
+                "size": ValiDateFileMb(fileLength, req.files)
             },
         }
 
@@ -86,6 +104,7 @@ const FileUploadWithoutLogin = async (req, res) => {
             metadata.customMetadata.userId = req.body.userId
         }
         const uploadTask = uploadBytesResumable(storageRef, Buffer.from(mz.zip()), metadata)
+        console.log(uploadTask, "uploadTask");
 
         uploadTask.on('state_changed',
             (snapshot) => {
@@ -107,15 +126,30 @@ const FileUploadWithoutLogin = async (req, res) => {
                 switch (error.code) {
                     case 'storage/unauthorized':
                         // User doesn't have permission to access the object
+                        res.status(error.code || 400).send({
+                            msg: "User doesn't have permission to access the object",
+                            error: error.message
+                        })
+                        return false
                         break;
                     case 'storage/canceled':
                         // User canceled the upload
+                        res.status(error.code || 400).send({
+                            msg: "User canceled the upload",
+                            error: error.message
+                        })
+                        return false
                         break;
 
                     // ...
 
                     case 'storage/unknown':
                         // Unknown error occurred, inspect error.serverResponse
+                        res.status(error.code || 400).send({
+                            msg: "Unknown error occurred, inspect error.serverResponse",
+                            error: error.message
+                        })
+                        return false
                         break;
                 }
             },
@@ -123,7 +157,44 @@ const FileUploadWithoutLogin = async (req, res) => {
                 // Upload completed successfully, now we can get the download URL
                 getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                     console.log('File available at');
-                    res.status(200).send([downloadURL])
+
+                    try {
+
+
+                        if (downloadURL) {
+                            (async () => {
+                                const filedatas = {
+                                    FileUnqueId: GenerateUniquekey(),
+                                    FileName: req.body.FileName,
+                                    FileUrl: downloadURL,
+                                    FileSizeMb: ValiDateFileMb(fileLength, req.files),
+                                    UserID: req.body.userID ? req.body.userID : null,
+                                    FilePassword: req.body.FilePassword,
+                                }
+                                const objfiles = new collection(filedatas);
+                                const fileAknowladgement = await objfiles.save()
+
+                                res.status(200).send(fileAknowladgement)
+                                return false
+
+                            })()
+
+
+
+                        } else {
+                            return false
+                        }
+
+                    } catch (error) {
+                        res.status(e.statusCode || 400).send({
+
+                            msg: "someting unwanted occured...",
+                            error: e.message
+                        });
+                    }
+
+
+
                 });
             }
         );
@@ -137,14 +208,216 @@ const FileUploadWithoutLogin = async (req, res) => {
 
 }
 
-const userupload=async(req,res)=>{
-    res.status(200).send({
-        msg:"server loaded"
-    })
+const UserSignup = async (req, res) => {
+    try {
+        const Passwordhash = await bcrypt.hash(req.body.Password, 10)
+        const Signupdata = {
+            UserName: req.body.UserName,
+            UserEmail: req.body.UserEmail,
+            UserPassword: Passwordhash,
+        }
+
+        const data = new userCollection(Signupdata);
+        const signupAknowladgement = await data.save()
+        const token = await geterateAuthUserToken(signupAknowladgement._id)
+
+        res.status(200).send({ signupAknowladgement, token });
+
+
+
+
+    } catch (error) {
+        res.status(error.statusCode || 400).send({
+            msg: "Something Unwanted Occoured....",
+            error: error.message
+        })
+    }
+
+}
+const Userlogin = async (req, res) => {
+    try {
+        if (!req.body.UserEmail || !req.body.UserPassword) {
+            res.status(400).send({
+                error: "Crendetails must required"
+            })
+            return false
+        }
+        const data = await userCollection.find({
+            UserEmail: req.body.UserEmail
+        });
+        if (data.length == 0) {
+            res.status(400).send({
+                error: "Enter Valid Crendentials.."
+            })
+            return false
+        }
+        const ismatch = await bcrypt.compare(req.body.UserPassword, data[0].UserPassword)
+
+        if (!ismatch) {
+            res.status(400).send({
+                error: "Enter Valid Crendentials.."
+            })
+            return false
+        }
+        delete data[0]._doc.tokens
+        const token = await geterateAuthUserToken(data[0]._id)
+        res.status(200).send({ data, token })
+
+
+
+
+    } catch (error) {
+        res.status(error.statusCode || 400).send({
+            msg: "Something Unwanted Occoured....",
+            error: error.message
+        })
+    }
+
+}
+const FindUserByid = async (req, res) => {
+    try {
+        if (!req.body.UserID) {
+            res.status(400).send({
+                error: "UserID must required"
+            })
+            return false
+        }
+        const data = await userCollection.findById({
+            _id: req.body.UserID
+        });
+        // userdata._doc.user_district
+        delete data._doc.tokens
+        res.status(200).send(data)
+
+    } catch (error) {
+        res.status(error.statusCode || 400).send({
+            msg: "Something Unwanted occured ",
+            error: error.message
+        })
+
+    }
 
 }
 
+const SearchFile = async (req, res) => {
+
+    try {
+        if (!req.body.FileID) {
+            res.status(400).send({
+                error: "FileUnieueId field required."
+            })
+            return false;
+        }
+        const isfile = await collection.find({
+            FileUnqueId: req.body.FileID
+        })
+        if (isfile.length == 0) {
+            res.status(200).send("File not found.");
+            return false
+        }
+        res.status(200).send(isfile)
+    } catch (error) {
+        res.status(error.statusCode || 400).send({
+            msg: "Something Unwanted occured ",
+            error: error.message
+        })
+    }
+
+}
+
+const SearchFileByUserId = async (req, res) => {
+
+    try {
+        // if (!req.body.UserID) {
+        //     res.status(400).send({
+        //         error: "UserID field required."
+        //     })
+        //     return false;
+        // }
+        const isfile = await collection.find({
+            UserID: req.user[0]._id
+        })
+        if (isfile.length == 0) {
+            res.status(200).send("File not found.");
+            return false
+        }
+        res.status(200).send(isfile)
+    } catch (error) {
+        res.status(error.statusCode || 400).send({
+            msg: "Something Unwanted occured ",
+            error: error.message
+        })
+    }
+
+}
+const mergeFilesWithUser = async (req, res) => {
+
+    try {
+        console.log(req.user, "hyy")
+        if (!req.body.FileID || !req.body.FilePassword) {
+            res.status(400).send({
+                error: "Credentials field required."
+            })
+            return false;
+        }
+        let IsPassword = await collection.find({
+            _id: req.body.FileID,
+            FilePassword: req.body.FilePassword,
+
+        })
+
+
+        if (IsPassword.length == 0) {
+            res.status(200).send({
+                error: "Please enter correct credentails."
+            })
+            return false;
+        }
+        // console.log(IsPassword)
+        IsPassword[0]._doc.UserID = req.user[0]._id
+
+        IsPassword = new collection(IsPassword[0])
+        const fileAknowladgement = await IsPassword.save()
+
+
+        res.status(200).send(fileAknowladgement);
+
+    } catch (error) {
+        res.status(error.statusCode || 400).send({
+            msg: "Something Unwanted occured ",
+            error: error.message
+        })
+    }
+}
+
+const UserLogut=async(req,res)=>{
+    try {
+        console.log(req.user[0]._doc.tokens)
+        req.user[0]._doc.tokens = req.user[0].tokens.filter(
+          (token) => token.token !== req.token
+        );
+        const data= new userCollection(req.user[0])
+
+        await data.save();
+        res.status(200).send({ success: "User logged out successfully!" });
+      } catch (e) {
+        res.status(e.statusCode||400).send({
+    
+          msg:"someting unwanted occured...",
+          error:e.message
+        });
+      }
+
+}
+
+
 module.exports = {
     FileUploadWithoutLogin,
-    userupload
+    UserSignup,
+    Userlogin,
+    FindUserByid,
+    SearchFile,
+    SearchFileByUserId,
+    mergeFilesWithUser,
+    UserLogut
 }
