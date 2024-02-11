@@ -1,20 +1,20 @@
 const mongoose = require("mongoose")
 mongoose.set("strictQuery", true)
 const dotenv = require('dotenv').config();
-(async () => {
 
-
-
+const connectDn = async () => {
     try {
-        mongoose.connect("mongodb://127.0.0.1/FileUploads").then(() => {
-            console.log("DB connection successful.......");
-        })
-            .catch((err) => {
-                console.log(`DB connection error:${err}`);
-            });
+        const conn = await mongoose.connect("mongodb://127.0.0.1/FileUploads")
+        console.log(`MongoDB Connected: ${conn.connection.host}`)
+        
     } catch (error) {
-        console.log(`DB connection error:${error}`);
-    }
-       
- 
-})();
+    console.log(`DB connection error:${error}`);
+    process.exit(1);
+}
+}
+
+module.exports = connectDn
+
+
+
+
