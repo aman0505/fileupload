@@ -4,7 +4,7 @@ const app = express()
 
 const port = process.env.PORT || 8020
 const cors = require('cors');
-require("./db/mongoose")
+const connectDn=require("./db/mongoose")
 
 // spawn = require('child_process').spawn;
 
@@ -36,8 +36,10 @@ const user = require("./module/user/router/userRouter");
 app.use(user)
 
 
+connectDn().then(()=>{
+    app.listen(port, () => {
+        console.log(port, 'Run successfully!');
+    });
+})
 
-app.listen(port, () => {
-    console.log(port, 'Run successfully!');
-});
 

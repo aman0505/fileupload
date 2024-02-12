@@ -2,20 +2,16 @@ const mongoose = require("mongoose")
 mongoose.set("strictQuery", true)
 const dotenv = require('dotenv').config();
 
-// const connectDn = async () => {
+const connectDn = async () => {
 
-(async () => {
+
     try {
         // OjYU25YOVaTB7xGN
-        url="mongodb+srv://rauniyaraman463:hello123@testfileupload.dn9c2xp.mongodb.net/?retryWrites=true&w=majority"
-        url2=""
-        mongoose.connect(url).then(() => {
-            console.log(  " database connected")
-        }).catch((error) => {
-            console.log(error)
-        })
+        url = "mongodb+srv://rauniyaraman463:hello123@testfileupload.dn9c2xp.mongodb.net/?retryWrites=true&w=majority"
+        url2 = "mongodb://127.0.0.1:27017/FileUploads"
+        const conn = await mongoose.connect(url)
 
-
+        console.log(`mongodb Connected ${conn.connection.host}`)
         // .then(() => {
 
         //     console.log(`MongoDB Connected: ${conn.connection.host}`)
@@ -27,11 +23,11 @@ const dotenv = require('dotenv').config();
     } catch (error) {
         console.log(`DB connection error:${error}`);
     }
-})()
 
-// }
 
-// module.exports = connectDn
+}
+
+module.exports = connectDn
 
 
 
