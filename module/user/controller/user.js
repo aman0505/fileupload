@@ -88,7 +88,9 @@ const FileUploadWithoutLogin = async (req, res) => {
         const storage = getStorage();
         const auth = getAuth(app1);
         // authentation 
-        await signInWithEmailAndPassword(auth, process.env.firebaseEmail, process.env.firebasePassword)
+        const email= process.env.firebaseEmail
+        const password=process.env.firebasePassword
+        // await signInWithEmailAndPassword(auth,"quickearth4@gmail.com","9805999374" )
         const storageRef = ref(storage, req.body.FileName + ".zip")
         var metadata = {
             customMetadata: {

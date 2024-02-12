@@ -7,8 +7,9 @@ const dotenv = require('dotenv').config();
 (async () => {
     try {
         // OjYU25YOVaTB7xGN
-        
-        mongoose.connect("mongodb+srv://rauniyaraman463:hello123@testfileupload.dn9c2xp.mongodb.net/?retryWrites=true&w=majority").then(() => {
+        url="mongodb+srv://rauniyaraman463:hello123@testfileupload.dn9c2xp.mongodb.net/?retryWrites=true&w=majority"
+        url2=""
+        mongoose.connect(url).then(() => {
             console.log(  " database connected")
         }).catch((error) => {
             console.log(error)
