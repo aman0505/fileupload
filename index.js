@@ -2,10 +2,10 @@ const express = require("express")
 const bodyParser = require('body-parser');
 const app = express()
 
-const port =process.env.PORT||5000
+const port = process.env.PORT || 8020
 const cors = require('cors');
-const connectDn=require("./db/mongoose")
- 
+require("./db/mongoose")
+
 // spawn = require('child_process').spawn;
 
 
@@ -30,14 +30,14 @@ app.get("/", (req, res) => {
 })
 
 // user Routes
-const user=require("./module/user/router/userRouter");
+const user = require("./module/user/router/userRouter");
 
 
 app.use(user)
 
 
-connectDn().then(()=>{
-    app.listen(port, () => {
-        console.log(port, 'Run successfully!');
-    });
-})
+
+app.listen(port, () => {
+    console.log(port, 'Run successfully!');
+});
+
