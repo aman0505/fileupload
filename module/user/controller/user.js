@@ -8,7 +8,7 @@ const userCollection = require("../models/userSignup");
 const geterateAuthUserToken = require("../../../helpers/user/token");
 const bcrypt = require("bcryptjs");
 // const collection = require("../models/fileupload");
-const dotenv=require("dotenv").config()
+const dotenv = require("dotenv").config()
 const firebaseConfig = {
     apiKey: process.env.apiKey,
     authDomain: process.env.authDomain,
@@ -35,6 +35,34 @@ const ValiDateFileMb = (fileLength, filesarray) => {
 
 }
 
+
+const fileuploadFrontend = async (req, res) => {
+    console.log("hyy")
+
+    
+    if (req.body.uniqueid==undefined ||req.body.fileSize==undefined || req.body.downloadURL==undefined ||req.body.FilePassword ==undefined) {
+
+        res.status(500).send({
+            msg: "Missing fields",
+            error: "Please enter required Fields"
+        })
+        return false
+    }
+   
+    const filedatas = {
+        FileUnqueId: req.body.uniqueid,
+        FileName: req.body.FileName,
+        FileUrl: req.body.downloadURL,
+        FileSizeMb: req.body.fileSize,
+        UserID: req.body.userID ? req.body.userID : null,
+        FilePassword: req.body.FilePassword,
+    }
+    const objfiles = new collection(filedatas);
+    const fileAknowladgement = await objfiles.save()
+
+    res.status(200).send(fileAknowladgement)
+}
+
 const FileUploadWithoutLogin = async (req, res) => {
 
 
@@ -53,7 +81,7 @@ const FileUploadWithoutLogin = async (req, res) => {
         // ================================================
         // Files Size Restriction
 
-
+        console.log(req.files)
 
         const FileSIze = 4
         const fileLength = req.files.length
@@ -72,7 +100,7 @@ const FileUploadWithoutLogin = async (req, res) => {
             return false
         }
         // ===============================================
-        // zip algo 1
+        // zip algo 1 [currently working for zip]
         var mz = new Minizip();
         if (req.files.length == 0) {
             mz.append(req.files[0].originalname, req.files[0].buffer);
@@ -88,8 +116,8 @@ const FileUploadWithoutLogin = async (req, res) => {
         const storage = getStorage();
         const auth = getAuth(app1);
         // authentation 
-        const email= process.env.firebaseEmail
-        const password=process.env.firebasePassword
+        const email = process.env.firebaseEmail
+        const password = process.env.firebasePassword
         // await signInWithEmailAndPassword(auth,"quickearth4@gmail.com","9805999374" )
         const storageRef = ref(storage, req.body.FileName + ".zip")
         var metadata = {
@@ -105,101 +133,101 @@ const FileUploadWithoutLogin = async (req, res) => {
         } else {
             metadata.customMetadata.userId = req.body.userId
         }
-        const uploadTask = uploadBytesResumable(storageRef, Buffer.from(mz.zip()), metadata)
-        console.log(uploadTask, "uploadTask");
+        // const uploadTask = uploadBytesResumable(storageRef, Buffer.from(mz.zip()), metadata)
+        // console.log(uploadTask, "uploadTask");
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log('Upload is ' + progress + '% done');
-                switch (snapshot.state) {
-                    case 'paused':
-                        console.log('Upload is paused');
-                        break;
-                    case 'running':
-                        console.log('Upload is running');
-                        break;
-                }
-            },
-            (error) => {
-                // A full list of error codes is available at
-                // https://firebase.google.com/docs/storage/web/handle-errors
-                switch (error.code) {
-                    case 'storage/unauthorized':
-                        // User doesn't have permission to access the object
-                        res.status(error.code || 400).send({
-                            msg: "User doesn't have permission to access the object",
-                            error: error.message
-                        })
-                        return false
-                        break;
-                    case 'storage/canceled':
-                        // User canceled the upload
-                        res.status(error.code || 400).send({
-                            msg: "User canceled the upload",
-                            error: error.message
-                        })
-                        return false
-                        break;
+        // uploadTask.on('state_changed',
+        //     (snapshot) => {
+        //         // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+        //         const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        //         console.log('Upload is ' + progress + '% done');
+        //         switch (snapshot.state) {
+        //             case 'paused':
+        //                 console.log('Upload is paused');
+        //                 break;
+        //             case 'running':
+        //                 console.log('Upload is running');
+        //                 break;
+        //         }
+        //     },
+        //     (error) => {
+        //         // A full list of error codes is available at
+        //         // https://firebase.google.com/docs/storage/web/handle-errors
+        //         switch (error.code) {
+        //             case 'storage/unauthorized':
+        //                 // User doesn't have permission to access the object
+        //                 res.status(error.code || 400).send({
+        //                     msg: "User doesn't have permission to access the object",
+        //                     error: error.message
+        //                 })
+        //                 return false
+        //                 break;
+        //             case 'storage/canceled':
+        //                 // User canceled the upload
+        //                 res.status(error.code || 400).send({
+        //                     msg: "User canceled the upload",
+        //                     error: error.message
+        //                 })
+        //                 return false
+        //                 break;
 
-                    // ...
+        //             // ...
 
-                    case 'storage/unknown':
-                        // Unknown error occurred, inspect error.serverResponse
-                        res.status(error.code || 400).send({
-                            msg: "Unknown error occurred, inspect error.serverResponse",
-                            error: error.message
-                        })
-                        return false
-                        break;
-                }
-            },
-            () => {
-                // Upload completed successfully, now we can get the download URL
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    console.log('File available at');
+        //             case 'storage/unknown':
+        //                 // Unknown error occurred, inspect error.serverResponse
+        //                 res.status(error.code || 400).send({
+        //                     msg: "Unknown error occurred, inspect error.serverResponse",
+        //                     error: error.message
+        //                 })
+        //                 return false
+        //                 break;
+        //         }
+        //     },
+        //     () => {
+        //         // Upload completed successfully, now we can get the download URL
+        //         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+        //             console.log('File available at');
 
-                    try {
-
-
-                        if (downloadURL) {
-                            (async () => {
-                                const filedatas = {
-                                    FileUnqueId: GenerateUniquekey(),
-                                    FileName: req.body.FileName,
-                                    FileUrl: downloadURL,
-                                    FileSizeMb: ValiDateFileMb(fileLength, req.files),
-                                    UserID: req.body.userID ? req.body.userID : null,
-                                    FilePassword: req.body.FilePassword,
-                                }
-                                const objfiles = new collection(filedatas);
-                                const fileAknowladgement = await objfiles.save()
-
-                                res.status(200).send(fileAknowladgement)
-                                return false
-
-                            })()
+        //             try {
 
 
+        //                 if (downloadURL) {
+        //                     (async () => {
+        //                         const filedatas = {
+        //                             FileUnqueId: GenerateUniquekey(),
+        //                             FileName: req.body.FileName,
+        //                             FileUrl: downloadURL,
+        //                             FileSizeMb: ValiDateFileMb(fileLength, req.files),
+        //                             UserID: req.body.userID ? req.body.userID : null,
+        //                             FilePassword: req.body.FilePassword,
+        //                         }
+        //                         const objfiles = new collection(filedatas);
+        //                         const fileAknowladgement = await objfiles.save()
 
-                        } else {
-                            return false
-                        }
+        //                         res.status(200).send(fileAknowladgement)
+        //                         return false
 
-                    } catch (error) {
-                        res.status(e.statusCode || 400).send({
-
-                            msg: "someting unwanted occured...",
-                            error: e.message
-                        });
-                    }
+        //                     })()
 
 
 
-                });
-            }
-        );
+        //                 } else {
+        //                     return false
+        //                 }
+
+        //             } catch (error) {
+        //                 res.status(e.statusCode || 400).send({
+
+        //                     msg: "someting unwanted occured...",
+        //                     error: e.message
+        //                 });
+        //             }
+
+
+
+        //         });
+        //     }
+        // );
     } catch (e) {
         res.status(e.statusCode || 400).send({
 
@@ -302,9 +330,9 @@ const FindUserByid = async (req, res) => {
 }
 
 const SearchFile = async (req, res) => {
-
+console.log("searchfile")
     try {
-        if (!req.body.FileID) {
+        if (!req.body.FileID) { 
             res.status(400).send({
                 error: "FileUnieueId field required."
             })
@@ -314,7 +342,9 @@ const SearchFile = async (req, res) => {
             FileUnqueId: req.body.FileID
         })
         if (isfile.length == 0) {
-            res.status(200).send("File not found.");
+            res.status(400).send({
+                error:"File not found"
+            });
             return false
         }
         res.status(200).send(isfile)
@@ -392,23 +422,23 @@ const mergeFilesWithUser = async (req, res) => {
     }
 }
 
-const UserLogut=async(req,res)=>{
+const UserLogut = async (req, res) => {
     try {
         console.log(req.user[0]._doc.tokens)
         req.user[0]._doc.tokens = req.user[0].tokens.filter(
-          (token) => token.token !== req.token
+            (token) => token.token !== req.token
         );
-        const data= new userCollection(req.user[0])
+        const data = new userCollection(req.user[0])
 
         await data.save();
         res.status(200).send({ success: "User logged out successfully!" });
-      } catch (e) {
-        res.status(e.statusCode||400).send({
-    
-          msg:"someting unwanted occured...",
-          error:e.message
+    } catch (e) {
+        res.status(e.statusCode || 400).send({
+
+            msg: "someting unwanted occured...",
+            error: e.message
         });
-      }
+    }
 
 }
 
@@ -421,5 +451,6 @@ module.exports = {
     SearchFile,
     SearchFileByUserId,
     mergeFilesWithUser,
-    UserLogut
+    UserLogut,
+    fileuploadFrontend
 }

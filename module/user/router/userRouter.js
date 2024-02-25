@@ -7,6 +7,7 @@ const upload = multer({
 }); 
 
 router.post("/uploadWithOutLogin",upload.any(),user.FileUploadWithoutLogin)
+router.post("/userFile/upload/frontend",user.fileuploadFrontend)
 router.post("/userSignup",user.UserSignup)
 router.post("/userlogin",user.Userlogin)
 router.post("/findUserById",user.FindUserByid)

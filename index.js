@@ -2,7 +2,7 @@ const express = require("express")
 const bodyParser = require('body-parser');
 const app = express()
 
-const port = process.env.PORT || 8020
+const port = process.env.PORT || 8090
 const cors = require('cors');
 const connectDn=require("./db/mongoose")
 

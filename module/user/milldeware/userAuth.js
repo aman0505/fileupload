@@ -4,7 +4,7 @@ const dotevn = require("dotenv").config()
 const jwt = require("jsonwebtoken");
 
 const userAuth = async (req, res, next) => {
-
+   
     try {
         const token = req.header("Authorization").replace("Bearer ", "");
         const decode = jwt.verify(token, process.env.SecretJwtToken);
