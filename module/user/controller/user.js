@@ -441,7 +441,9 @@ const UserLogut = async (req, res) => {
     }
 
 }
-
+const  firstpage=async (req, res) => {
+    res.status(200).send("welcome")
+}
 
 module.exports = {
     FileUploadWithoutLogin,
@@ -452,5 +454,6 @@ module.exports = {
     SearchFileByUserId,
     mergeFilesWithUser,
     UserLogut,
-    fileuploadFrontend
+    fileuploadFrontend,
+    firstpage
 }
