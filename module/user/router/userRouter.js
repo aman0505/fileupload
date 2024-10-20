@@ -6,6 +6,7 @@ const upload = multer({
     storage: multer.memoryStorage()
 }); 
 
+router.get("/welcome",user.firstpage)
 router.post("/uploadWithOutLogin",upload.any(),user.FileUploadWithoutLogin)
 router.post("/userFile/upload/frontend",user.fileuploadFrontend)
 router.post("/userSignup",user.UserSignup)
